@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
-const path = require('path'); // Added path module for production serving
+const path = require('path');
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorMiddleware');
@@ -17,7 +17,7 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 
-// Load environment configurations
+// Load environment configurations (MUST BE BEFORE ANY ROUTE OR DB CALL)
 dotenv.config();
 
 // Establish MongoDB connection
@@ -25,7 +25,7 @@ connectDB();
 
 const app = express();
 
-// Security HTTP Headers with Content Security Policy (CSP)
+// Security HTTP Headers with Production-Friendly Content Security Policy (CSP)
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -44,6 +44,7 @@ app.use(helmet({
       ],
       connectSrc: [
         "'self'",
+        "https://apnaghar-b85j.onrender.com", // Added Render Live URL
         "http://localhost:5000",
         "http://localhost:5173",
         "http://localhost:11434"
@@ -54,7 +55,7 @@ app.use(helmet({
 
 // Cross-Origin Resource Sharing
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: process.env.CLIENT_URL || 'https://apnaghar-b85j.onrender.com', // Fallback to live url
   credentials: true
 }));
 
@@ -97,9 +98,7 @@ if (process.env.NODE_ENV === 'production') {
 
   // For any route that doesn't match an API route, send back index.html
   app.get('*', (req, res, next) => {
-    // Skip if the request is an API request that wasn't caught by the routes above
     if (req.url.startsWith('/api')) return next();
-
     res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
   });
 }
